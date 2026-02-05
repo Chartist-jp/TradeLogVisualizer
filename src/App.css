@@ -1,0 +1,60 @@
+.app-container {
+    min-height: 100vh;
+    background: linear-gradient(to bottom, #f8f9fa, #e9ecef);
+}
+
+.app-header {
+    background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
+    color: white;
+    padding: 30px 20px;
+    text-align: center;
+    box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+}
+
+.app-header h1 {
+    margin: 0;
+    font-size: 32px;
+    font-weight: 700;
+}
+
+.app-subtitle {
+    margin: 8px 0 0 0;
+    font-size: 14px;
+    opacity: 0.9;
+}
+
+.tab-navigation {
+    display: flex;
+    gap: 0;
+    background: white;
+    border-bottom: 2px solid #dee2e6;
+    padding: 0 20px;
+}
+
+.tab-button {
+    padding: 16px 32px;
+    border: none;
+    background: transparent;
+    color: #6c757d;
+    font-size: 15px;
+    font-weight: 600;
+    cursor: pointer;
+    transition: all 0.3s;
+    border-bottom: 3px solid transparent;
+    position: relative;
+}
+
+.tab-button:hover {
+    color: #495057;
+    background: #f8f9fa;
+}
+
+.tab-button.active {
+    color: #667eea;
+    border-bottom-color: #667eea;
+    background: transparent;
+}
+
+.app-content {
+    padding: 20px;
+}

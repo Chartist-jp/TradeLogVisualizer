@@ -1,0 +1,79 @@
+.trading-chart-container {
+    background: white;
+    border-radius: 12px;
+    padding: 20px;
+    box-shadow: 0 2px 8px rgba(0, 0, 0, 0.1);
+    margin-bottom: 20px;
+}
+
+.chart-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 16px;
+    padding-bottom: 12px;
+    border-bottom: 2px solid #f0f0f0;
+}
+
+.chart-title {
+    display: flex;
+    align-items: center;
+    gap: 12px;
+}
+
+.chart-title h3 {
+    margin: 0;
+    font-size: 18px;
+    color: #1a1a1a;
+}
+
+.trade-summary {
+    display: flex;
+    gap: 16px;
+    align-items: center;
+}
+
+.profit-loss {
+    font-size: 20px;
+    font-weight: 700;
+}
+
+.profit-loss.profit {
+    color: #22c55e;
+}
+
+.profit-loss.loss {
+    color: #ef4444;
+}
+
+.holding-period {
+    font-size: 14px;
+    color: #6c757d;
+    background: #f8f9fa;
+    padding: 4px 12px;
+    border-radius: 6px;
+}
+
+.chart-canvas {
+    position: relative;
+}
+
+.chart-loading,
+.chart-error {
+    text-align: center;
+    padding: 40px;
+    color: #666;
+}
+
+.chart-error {
+    color: #ef4444;
+}
+
+.country-badge {
+    padding: 4px 10px;
+    border-radius: 6px;
+    font-size: 12px;
+    font-weight: 600;
+    background: #e9ecef;
+    color: #495057;
+}
