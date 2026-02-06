@@ -130,3 +130,84 @@ export async function cacheStockDataToDB(): Promise<void> {
     // 将来的にIndexedDBでのキャッシュを実装
     // 現在はlocalStorageを使用
 }
+
+/**
+ * 日足データを週足データに変換
+ */
+export function resampleToWeekly(candles: CandleData[]): CandleData[] {
+    return resampleData(candles, (date) => {
+        // 週の始まり（月曜日）の日付を取得
+        const d = new Date(date);
+        const day = d.getDay();
+        const diff = d.getDate() - day + (day === 0 ? -6 : 1); // adjust when day is sunday
+        return new Date(d.setDate(diff)).toISOString().split('T')[0];
+    });
+}
+
+/**
+ * 日足データを月足データに変換
+ */
+export function resampleToMonthly(candles: CandleData[]): CandleData[] {
+    return resampleData(candles, (date) => {
+        // 月の初め（1日）の日付を取得
+        const d = new Date(date);
+        return new Date(d.getFullYear(), d.getMonth(), 1).toISOString().split('T')[0];
+    });
+}
+
+/**
+ * リサンプリングの共通ロジック
+ */
+function resampleData(
+    candles: CandleData[],
+    getKey: (date: string) => string
+): CandleData[] {
+    if (candles.length === 0) return [];
+
+    const groups = new Map<string, CandleData[]>();
+
+    // 期間ごとにグループ化
+    candles.forEach(candle => {
+        const key = getKey(candle.time);
+        if (!groups.has(key)) {
+            groups.set(key, []);
+        }
+        groups.get(key)!.push(candle);
+    });
+
+    // 各グループを集計
+    const resampled: CandleData[] = [];
+
+    // 日付順に処理するためにキーをソート
+    const sortedKeys = Array.from(groups.keys()).sort();
+
+    for (const key of sortedKeys) {
+        const group = groups.get(key)!;
+
+        // 始値：期間の最初のデータの始値
+        const open = group[0].open;
+
+        // 終値：期間の最後のデータの終値
+        const close = group[group.length - 1].close;
+
+        // 高値：期間中の最高値
+        const high = Math.max(...group.map(c => c.high));
+
+        // 安値：期間中の最安値
+        const low = Math.min(...group.map(c => c.low));
+
+        // 出来高：期間中の合計
+        const volume = group.reduce((sum, c) => sum + c.volume, 0);
+
+        resampled.push({
+            time: key,
+            open,
+            high,
+            low,
+            close,
+            volume
+        });
+    }
+
+    return resampled;
+}

@@ -1,0 +1,125 @@
+.trade-chart-group {
+    background: #fff;
+    border-radius: 8px;
+    box-shadow: 0 1px 3px rgba(0, 0, 0, 0.1);
+    margin-bottom: 16px;
+    padding: 12px;
+    border: 2px solid transparent;
+    transition: transform 0.2s, box-shadow 0.2s;
+    overflow: hidden;
+}
+
+.trade-chart-group:hover {
+    transform: translateY(-2px);
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+}
+
+.trade-chart-group.profit {
+    border-color: #22c55e;
+}
+
+.trade-chart-group.loss {
+    border-color: #ef4444;
+}
+
+.chart-group-header {
+    display: flex;
+    flex-direction: column;
+    gap: 10px;
+    padding: 4px 4px 12px 4px;
+    border-bottom: 1px solid #f1f5f9;
+}
+
+.trade-info-main {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    width: 100%;
+}
+
+.trade-info-left {
+    display: flex;
+    align-items: center;
+    gap: 8px;
+}
+
+.trade-info-main .symbol {
+    font-weight: bold;
+    font-size: 1.1em;
+    color: #1e293b;
+    background: #f1f5f9;
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.trade-info-main .name {
+    color: #64748b;
+    font-size: 0.9em;
+    white-space: nowrap;
+    overflow: hidden;
+    text-overflow: ellipsis;
+    max-width: 150px;
+}
+
+.trade-stats-row {
+    display: flex;
+    flex-wrap: wrap;
+    gap: 12px;
+    font-size: 0.85em;
+}
+
+.stat-item {
+    display: flex;
+    align-items: center;
+    gap: 4px;
+}
+
+.stat-item .label {
+    color: #94a3b8;
+}
+
+.stat-item .value {
+    font-weight: 600;
+    color: #334155;
+}
+
+.stat-item .value.profit {
+    color: #16a34a;
+}
+
+.stat-item .value.loss {
+    color: #dc2626;
+}
+
+.header-actions {
+    display: flex;
+    align-items: center;
+}
+
+.tv-link {
+    font-size: 0.75em;
+    text-decoration: none;
+    background: #f0f3fa;
+    color: #2962ff;
+    padding: 4px 8px;
+    border-radius: 4px;
+    font-weight: 600;
+    transition: background 0.2s;
+}
+
+.tv-link:hover {
+    background: #e0e6f5;
+}
+
+.charts-single {
+    width: 100%;
+    margin-top: 8px;
+}
+
+.chart-group-loading,
+.chart-group-error {
+    padding: 20px;
+    text-align: center;
+    background: #fff;
+    border-radius: 8px;
+}
