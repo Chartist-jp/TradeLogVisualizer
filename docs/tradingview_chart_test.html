@@ -1,0 +1,212 @@
+<!DOCTYPE html>
+<html lang="ja">
+
+<head>
+    <meta charset="UTF-8">
+    <title>Lightweight Charts - Precision Markers</title>
+    <script src="https://unpkg.com/lightweight-charts@4.1.1/dist/lightweight-charts.standalone.production.js"></script>
+    <style>
+        body {
+            margin: 0;
+            padding: 20px;
+            font-family: sans-serif;
+            background-color: #f0f2f5;
+        }
+
+        #chart-container {
+            width: 100%;
+            height: 500px;
+            background: white;
+            border-radius: 8px;
+            box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+        }
+
+        h2 {
+            color: #333;
+        }
+    </style>
+</head>
+
+<body>
+
+    <h2>株価チャート：売買ポイントの可視化（先端合わせ）</h2>
+    <div id="chart-container"></div>
+
+    <script>
+        const chartElement = document.getElementById('chart-container');
+
+        // 1. チャートの初期化
+        const chart = LightweightCharts.createChart(chartElement, {
+            layout: { background: { color: '#ffffff' }, textColor: '#333' },
+            grid: { vertLines: { color: '#f0f0f0' }, horzLines: { color: '#f0f0f0' } },
+            crosshair: { mode: LightweightCharts.CrosshairMode.Normal },
+            priceScale: { borderColor: '#cccccc' },
+            timeScale: { borderColor: '#cccccc' },
+        });
+
+        // 2. ローソク足シリーズの追加
+        const candlestickSeries = chart.addCandlestickSeries({
+            upColor: '#26a69a', downColor: '#ef5350', borderVisible: false,
+            wickUpColor: '#26a69a', wickDownColor: '#ef5350',
+        });
+
+        // サンプルデータ
+        const data = [
+            { time: '2025-01-01', open: 100, high: 105, low: 98, close: 103 },
+            { time: '2025-01-02', open: 103, high: 108, low: 102, close: 107 },
+            { time: '2025-01-03', open: 107, high: 107, low: 101, close: 102 },
+            { time: '2025-01-04', open: 102, high: 104, low: 100, close: 101 },
+            { time: '2025-01-05', open: 101, high: 110, low: 101, close: 108 },
+        ];
+        candlestickSeries.setData(data);
+
+        // 3. ★重要★ 売買ポイント専用のPrimitive（カスタム描画）を作成
+        // 標準のマーカーでは縮尺変更時に価格と矢印の位置関係がずれるため、Canvasで直接描画します。
+
+        class ArrowPrimitive {
+            constructor(data) {
+                this._data = data;
+                this._chart = null;
+                this._series = null;
+            }
+
+            attached(param) {
+                this._chart = param.chart;
+                this._series = param.series;
+            }
+
+            detached() {
+                this._chart = null;
+                this._series = null;
+            }
+
+            updateAllViews() {
+                // 今回は静的なデータなので特別な更新処理は不要ですが、必要に応じて実装します
+            }
+
+            paneViews() {
+                return [{
+                    renderer: () => {
+                        return {
+                            draw: (target) => {
+                                target.useMediaCoordinateSpace(scope => {
+                                    this._drawArrows(scope.context);
+                                });
+                            }
+                        };
+                    }
+                }];
+            }
+
+            _drawArrows(ctx) {
+                if (!this._chart || !this._series) return;
+
+                const timeScale = this._chart.timeScale();
+
+                this._data.forEach(item => {
+                    const x = timeScale.timeToCoordinate(item.time);
+                    const y = this._series.priceToCoordinate(item.price);
+
+                    // 画面外の場合は描画しない
+                    if (x === null || y === null) return;
+
+                    ctx.fillStyle = item.color;
+                    ctx.beginPath();
+
+                    const size = 12; // 矢印の高さ
+                    const halfWidth = 6; // 矢印の幅の半分
+
+                    if (item.direction === 'up') {
+                        // 上向き矢印（買い）：先端(x, y)が価格位置
+                        // 本体は下側
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x - halfWidth, y + size);
+                        ctx.lineTo(x + halfWidth, y + size);
+                    } else {
+                        // 下向き矢印（売り）：先端(x, y)が価格位置
+                        // 本体は上側
+                        ctx.moveTo(x, y);
+                        ctx.lineTo(x - halfWidth, y - size);
+                        ctx.lineTo(x + halfWidth, y - size);
+                    }
+                    ctx.fill();
+
+                    // テキスト描画（オプション）
+                    if (item.text) {
+                        ctx.font = '11px sans-serif';
+                        ctx.textAlign = 'center';
+                        if (item.direction === 'up') {
+                            ctx.textBaseline = 'top';
+                            ctx.fillText(item.text, x, y + size + 2);
+                        } else {
+                            ctx.textBaseline = 'bottom';
+                            ctx.fillText(item.text, x, y - size - 2);
+                        }
+                    }
+                });
+            }
+        }
+
+        // 設定したい売買価格
+        const buyPrice = 103.5;
+        const sellPrice = 106.0;
+
+        // データ定義
+        const arrowsData = [
+            {
+                time: '2025-01-02',
+                price: buyPrice,
+                direction: 'up',
+                color: '#2196F3',
+                text: 'BUY @ 103.5'
+            },
+            {
+                time: '2025-01-04',
+                price: sellPrice,
+                direction: 'down',
+                color: '#e91e63',
+                text: 'SELL @ 106.0'
+            }
+        ];
+
+        // CandlestickSeriesにPrimitiveをアタッチ
+        // これにより、CandlestickSeriesの価格スケールが使用されます
+        candlestickSeries.attachPrimitive(new ArrowPrimitive(arrowsData));
+
+        // 5. エントリー価格に横線（プライスライン）を引く
+        candlestickSeries.createPriceLine({
+            price: buyPrice,
+            color: '#2196F3',
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true,
+            title: 'ENTRY',
+        });
+
+        // 5. 買いと売りの価格ラインをそれぞれ描画
+
+        // 買い（Entry）のライン
+        candlestickSeries.createPriceLine({
+            price: buyPrice,
+            color: '#2196F3', // 青色
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true,
+            title: 'BUY ENTRY',
+        });
+
+        // 売り（Exit）のライン
+        candlestickSeries.createPriceLine({
+            price: sellPrice,
+            color: '#ef5350', // 赤色
+            lineWidth: 2,
+            lineStyle: LightweightCharts.LineStyle.Dashed,
+            axisLabelVisible: true,
+            title: 'SELL EXIT',
+        });
+
+        chart.timeScale().fitContent();
+    </script>
+</body>
+
+</html>

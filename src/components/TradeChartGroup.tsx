@@ -1,8 +1,8 @@
 import React, { useEffect, useState } from 'react';
 import { AggregatedTrade } from '../db/database';
 import { fetchStockDataWithCache, CandleData } from '../services/stockDataService';
-import StockChart from './StockChart';
-import { Time, SeriesMarker, LogicalRange } from 'lightweight-charts';
+import StockChart, { PrecisionMarker } from './StockChart';
+import { Time, LogicalRange } from 'lightweight-charts';
 import './TradeChartGroup.css';
 
 interface TradeChartGroupProps {
@@ -21,10 +21,10 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
     }, [trade]);
 
     const loadData = async () => {
+        // ... (既存のコード)
         setLoading(true);
         setError('');
         try {
-            // 前後120日のデータを取得（日足用、少し広めに）
             const startDate = new Date(trade.entryDate);
             startDate.setDate(startDate.getDate() - 120);
 
@@ -52,29 +52,30 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
         }
     };
 
-    // マーカー生成
-    const createMarkers = (): SeriesMarker<Time>[] => {
-        const markers: SeriesMarker<Time>[] = [];
+    // 精密マーカーの生成
+    const createPrecisionMarkers = (): PrecisionMarker[] => {
         const format = (d: string) => d.replace(/\//g, '-') as Time;
         const cur = trade.country === 'JP' ? '¥' : '$';
+        const priceDigits = trade.country === 'JP' ? 0 : 2;
 
-        markers.push({
-            time: format(trade.entryDate),
-            position: 'belowBar',
-            color: '#2196F3',
-            shape: 'arrowUp',
-            text: `Buy ${cur}${trade.avgEntryPrice.toLocaleString()}`,
-        });
-
-        markers.push({
-            time: format(trade.exitDate),
-            position: 'aboveBar',
-            color: trade.profitLoss >= 0 ? '#4CAF50' : '#F44336',
-            shape: 'arrowDown',
-            text: `Sell ${cur}${trade.avgExitPrice.toLocaleString()}`,
-        });
-
-        return markers;
+        return [
+            {
+                time: format(trade.entryDate),
+                price: trade.avgEntryPrice,
+                direction: 'up',
+                color: '#2196F3',
+                // text: `Buy ${cur}${trade.avgEntryPrice.toLocaleString(undefined, { minimumFractionDigits: priceDigits, maximumFractionDigits: priceDigits })}`,
+                text: `Buy`,
+            },
+            {
+                time: format(trade.exitDate),
+                price: trade.avgExitPrice,
+                direction: 'down',
+                color: trade.profitLoss >= 0 ? '#4CAF50' : '#F44336',
+                // text: `Sell ${cur}${trade.avgExitPrice.toLocaleString(undefined, { minimumFractionDigits: priceDigits, maximumFractionDigits: priceDigits })}`,
+                text: `Sell`,
+            }
+        ];
     };
 
     const getTradingViewUrl = () => {
@@ -110,15 +111,18 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
                 <div className="trade-stats-row">
                     {(() => {
                         const cur = trade.country === 'JP' ? '¥' : '$';
+                        const digits = trade.country === 'JP' ? 0 : 2;
+                        const f = (val: number) => val.toLocaleString(undefined, { minimumFractionDigits: digits, maximumFractionDigits: digits });
+
                         return (
                             <>
                                 <div className="stat-item">
                                     <span className="label">取得:</span>
-                                    <span className="value">{cur}{trade.avgEntryPrice.toLocaleString()}</span>
+                                    <span className="value">{cur}{f(trade.avgEntryPrice)}</span>
                                 </div>
                                 <div className="stat-item">
                                     <span className="label">売却:</span>
-                                    <span className="value">{cur}{trade.avgExitPrice.toLocaleString()}</span>
+                                    <span className="value">{cur}{f(trade.avgExitPrice)}</span>
                                 </div>
                                 <div className="stat-item">
                                     <span className="label">株数:</span>
@@ -127,7 +131,7 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
                                 <div className="stat-item">
                                     <span className="label">損益:</span>
                                     <span className={`value ${profitClassName}`}>
-                                        {cur}{trade.profitLoss.toLocaleString()} ({trade.profitLossPercent.toFixed(2)}%)
+                                        {cur}{f(trade.profitLoss)} ({trade.profitLossPercent.toFixed(2)}%)
                                     </span>
                                 </div>
                             </>
@@ -138,9 +142,10 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
             <div className="charts-single">
                 <StockChart
                     data={dailyData}
-                    markers={createMarkers()}
-                    title="日足"
+                    precisionMarkers={createPrecisionMarkers()}
+                    // title="日足"
                     height={250}
+                    country={trade.country}
                     onVisibleTimeRangeChange={onTimeRangeChange}
                     visibleRange={visibleRange}
                 />
@@ -150,3 +155,4 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
 };
 
 export default TradeChartGroup;
+

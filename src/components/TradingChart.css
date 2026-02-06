@@ -77,3 +77,57 @@
     background: #e9ecef;
     color: #495057;
 }
+
+/* 凡例 (Legend) スタイル */
+.chart-relative-container {
+    position: relative;
+    width: 100%;
+}
+
+.chart-legend {
+    position: absolute;
+    left: 8px;
+    top: 2px;
+    z-index: 10;
+    pointer-events: none;
+    font-family: -apple-system, BlinkMacSystemFont, "Segoe UI", Roboto, Helvetica, Arial, sans-serif;
+    font-size: 10px;
+    line-height: 1.2;
+    color: #333;
+    display: flex;
+    flex-direction: column;
+    gap: 1px;
+    background: rgba(255, 255, 255, 0.6);
+    padding: 2px 6px;
+    border-radius: 4px;
+}
+
+.legend-row {
+    display: flex;
+    flex-wrap: wrap;
+    align-items: center;
+    gap: 6px;
+}
+
+.legend-date {
+    font-weight: bold;
+    margin-right: 2px;
+}
+
+.legend-label {
+    color: #666;
+    font-weight: 500;
+}
+
+.legend-value {
+    font-weight: bold;
+    color: #333;
+}
+
+.sma-row {
+    font-size: 9px;
+}
+
+.sma-label {
+    font-weight: 600;
+}
