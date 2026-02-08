@@ -58,3 +58,8 @@
 .app-content {
     padding: 20px;
 }
+.section-divider {
+    margin: 40px 0;
+    border: 0;
+    border-top: 1px solid #eee;
+}

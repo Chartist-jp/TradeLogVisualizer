@@ -55,25 +55,20 @@ const TradeChartGroup: React.FC<TradeChartGroupProps> = ({ trade, onTimeRangeCha
     // 精密マーカーの生成
     const createPrecisionMarkers = (): PrecisionMarker[] => {
         const format = (d: string) => d.replace(/\//g, '-') as Time;
-        const cur = trade.country === 'JP' ? '¥' : '$';
-        const priceDigits = trade.country === 'JP' ? 0 : 2;
-
         return [
             {
                 time: format(trade.entryDate),
                 price: trade.avgEntryPrice,
                 direction: 'up',
                 color: '#2196F3',
-                // text: `Buy ${cur}${trade.avgEntryPrice.toLocaleString(undefined, { minimumFractionDigits: priceDigits, maximumFractionDigits: priceDigits })}`,
-                text: `Buy`,
+                text: `買い`,
             },
             {
                 time: format(trade.exitDate),
                 price: trade.avgExitPrice,
                 direction: 'down',
                 color: trade.profitLoss >= 0 ? '#4CAF50' : '#F44336',
-                // text: `Sell ${cur}${trade.avgExitPrice.toLocaleString(undefined, { minimumFractionDigits: priceDigits, maximumFractionDigits: priceDigits })}`,
-                text: `Sell`,
+                text: `売り`,
             }
         ];
     };

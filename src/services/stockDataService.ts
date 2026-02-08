@@ -46,7 +46,8 @@ export async function fetchStockData(
 
         if (!response.ok) {
             const errorData = await response.json().catch(() => ({}));
-            throw new Error(`API Error: ${response.status} ${errorData.error || response.statusText}`);
+            console.error('Yahoo Finance API Error Data:', errorData);
+            throw new Error(`API Error: ${response.status} ${errorData.error || response.statusText}${errorData.details ? ` - ${errorData.details}` : ''}`);
         }
 
         const data = await response.json();

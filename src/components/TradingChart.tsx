@@ -271,7 +271,7 @@ const TradingChart: React.FC<TradingChartProps> = ({ trade }) => {
             lineWidth: 2,
             lineStyle: 2, // Dashed (LineStyle.Dashed)
             axisLabelVisible: true,
-            title: 'ENTRY',
+            title: '買い',
         });
 
         // エグジットライン
@@ -281,7 +281,7 @@ const TradingChart: React.FC<TradingChartProps> = ({ trade }) => {
             lineWidth: 2,
             lineStyle: 2, // Dashed (LineStyle.Dashed)
             axisLabelVisible: true,
-            title: 'EXIT',
+            title: '売り',
         });
     };
 

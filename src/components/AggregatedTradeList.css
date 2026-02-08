@@ -24,7 +24,8 @@
 /* 統計情報 */
 .trade-stats {
     display: flex;
-    gap: 30px;
+    flex-wrap: wrap;
+    gap: 20px 40px;
     margin-bottom: 30px;
     padding: 20px;
     background: linear-gradient(135deg, #667eea 0%, #764ba2 100%);
@@ -36,6 +37,7 @@
     display: flex;
     flex-direction: column;
     gap: 5px;
+    min-width: 120px;
 }
 
 .stat-label {

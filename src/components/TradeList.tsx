@@ -1,6 +1,7 @@
 import React, { useState, useEffect } from 'react';
 import { db } from '../db/database';
 import type { Trade } from '../db/database';
+import { recalculateAggregatedTrades } from '../utils/tradeAggregator';
 import './TradeList.css';
 
 const TradeList: React.FC = () => {
@@ -22,16 +23,22 @@ const TradeList: React.FC = () => {
         }
     };
 
-    const handleDelete = async (id: number) => {
-        if (confirm('このトレードを削除しますか？')) {
+    const handleDelete = async (e: React.MouseEvent, id: number) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm('このトレードを削除しますか？')) {
             await db.trades.delete(id);
+            await recalculateAggregatedTrades(db); // 統合データの再計算
             loadTrades();
         }
     };
 
-    const handleClearAll = async () => {
-        if (confirm('全てのトレードデータを削除しますか？この操作は取り消せません。')) {
+    const handleClearAll = async (e: React.MouseEvent) => {
+        e.preventDefault();
+        e.stopPropagation();
+        if (window.confirm('全てのトレードデータを削除しますか？この操作は取り消せません。')) {
             await db.trades.clear();
+            await recalculateAggregatedTrades(db); // 統合データの再計算
             loadTrades();
         }
     };
@@ -79,14 +86,17 @@ const TradeList: React.FC = () => {
                                             {trade.side === 'BUY' ? '買い' : '売り'}
                                         </span>
                                     </td>
-                                    <td className="number">{trade.price.toLocaleString()}</td>
+                                    <td className="number">
+                                        {trade.country === 'JP' ? '¥' : '$'}
+                                        {trade.price.toLocaleString(undefined, trade.country === 'US' ? { minimumFractionDigits: 2, maximumFractionDigits: 2 } : {})}
+                                    </td>
                                     <td className="number">{trade.quantity.toLocaleString()}</td>
                                     <td>
                                         <span className="country-badge">{trade.country}</span>
                                     </td>
                                     <td>
                                         <button
-                                            onClick={() => trade.id && handleDelete(trade.id)}
+                                            onClick={(e) => trade.id && handleDelete(e, trade.id)}
                                             className="delete-btn"
                                         >
                                             削除

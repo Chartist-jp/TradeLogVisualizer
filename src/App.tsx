@@ -2,9 +2,11 @@ import { useState } from 'react';
 import CSVImport from './components/CSVImport';
 import TradeList from './components/TradeList';
 import AggregatedTradeList from './components/AggregatedTradeList';
+import PortfolioAnalysis from './components/PortfolioAnalysis';
+import MultiChartDashboard from './components/MultiChartDashboard';
 import './App.css';
 
-type TabType = 'import' | 'trades' | 'aggregated';
+type TabType = 'import' | 'list' | 'dashboard' | 'analysis';
 
 function App() {
     const [refreshKey, setRefreshKey] = useState(0);
@@ -26,31 +28,44 @@ function App() {
                     className={`tab-button ${activeTab === 'import' ? 'active' : ''}`}
                     onClick={() => setActiveTab('import')}
                 >
-                    📥 データインポート
+                    📥 インポート
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'trades' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('trades')}
+                    className={`tab-button ${activeTab === 'list' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('list')}
                 >
-                    📋 約定履歴
+                    📋 トレード一覧
                 </button>
                 <button
-                    className={`tab-button ${activeTab === 'aggregated' ? 'active' : ''}`}
-                    onClick={() => setActiveTab('aggregated')}
+                    className={`tab-button ${activeTab === 'dashboard' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('dashboard')}
                 >
-                    📈 トレード分析
+                    📉 チャートダッシュボード
+                </button>
+                <button
+                    className={`tab-button ${activeTab === 'analysis' ? 'active' : ''}`}
+                    onClick={() => setActiveTab('analysis')}
+                >
+                    📊 ポートフォリオ分析
                 </button>
             </nav>
 
             <main className="app-content">
                 {activeTab === 'import' && (
-                    <CSVImport onImportSuccess={handleImportSuccess} />
+                    <>
+                        <CSVImport onImportSuccess={handleImportSuccess} />
+                        <hr className="section-divider" />
+                        <TradeList key={refreshKey} />
+                    </>
                 )}
-                {activeTab === 'trades' && (
-                    <TradeList key={refreshKey} />
-                )}
-                {activeTab === 'aggregated' && (
+                {activeTab === 'list' && (
                     <AggregatedTradeList key={refreshKey} />
+                )}
+                {activeTab === 'dashboard' && (
+                    <MultiChartDashboard key={refreshKey} />
+                )}
+                {activeTab === 'analysis' && (
+                    <PortfolioAnalysis key={refreshKey} />
                 )}
             </main>
         </div>

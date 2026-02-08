@@ -12,8 +12,6 @@ import {
     ISeriesPrimitive,
     ISeriesPrimitivePaneView,
     ISeriesPrimitivePaneRenderer,
-    Coordinate,
-    PriceLineOptions,
     LineStyle,
     SeriesAttachedParameter
 } from 'lightweight-charts';
@@ -418,7 +416,7 @@ const StockChart: React.FC<StockChartProps> = ({
                     lineWidth: 1,
                     lineStyle: LineStyle.Dashed,
                     axisLabelVisible: true,
-                    title: pm.direction === 'up' ? 'BUY' : 'SELL',
+                    title: pm.direction === 'up' ? '買い' : '売り',
                 });
                 priceLinesRef.current.push(line);
             });
