@@ -13,77 +13,96 @@ const fetch = (...args) => import('node-fetch').then(({ default: fetch }) => fet
 router.get('/:symbol', async (req, res) => {
     try {
         const { symbol } = req.params;
-        const { country, startDate, endDate } = req.query;
+        const { country } = req.query; // endDate, startDate are not strictly used by Alpha Vantage Daily (it returns full history compact/full), but we could filter if needed.
 
-        if (!country || !startDate || !endDate) {
-            return res.status(400).json({
-                error: 'Missing required query parameters: country, startDate, endDate'
-            });
+        // Alpha Vantage API Key
+        const apiKey = process.env.ALPHA_VANTAGE_API_KEY;
+        if (!apiKey) {
+            console.error('Alpha Vantage API Key is missing.');
+            return res.status(500).json({ error: 'Server configuration error: API Key missing' });
         }
 
-        // Yahoo Finance形式のシンボル変換
-        // 日本株の場合は .T を付与（既に付いている場合はそのまま）
-        let yahooSymbol = symbol;
-        if (country === 'JP' && !symbol.endsWith('.T')) {
-            yahooSymbol = `${symbol}.T`;
-        }
+        // シンボル変換 (Alpha Vantageは日本株には非対応の可能性が高いが、US株はそのまま)
+        // 日本株(.T)対応はAlpha Vantageの仕様によるが、通常は "6758.TOK" などの形式が必要な場合がある。
+        // ここではユーザー要望に従いAlpha Vantageへ切り替えるが、日本株のサポート状況に注意が必要。
+        // 一旦そのままのシンボルまたは単純な変換で試行する。
+        // 米国株: そのまま (e.g. AAPL)
+        // 日本株: Alpha Vantageは主要な取引所をサポートしているが、シンボル形式は "8035.TOK" (Tokyo) 等の場合がある。
+        // とりあえず ".T" -> ".TOK" 変換などを試みるが、まずはそのまま送ってみる。
 
-        // 日付をUnixタイムスタンプに変換
-        const period1 = Math.floor(new Date(startDate).getTime() / 1000);
-        const period2 = Math.floor(new Date(endDate).getTime() / 1000);
+        // *User request implies replacing Yahoo limitation. 
+        // Alpha Vantage's "TIME_SERIES_DAILY" returns daily data.
 
-        console.log(`Fetching data for ${yahooSymbol} from ${startDate} to ${endDate}`);
+        // Free Tier limitation: 'full' outputsize is premium. Default is 'compact' (latest 100 data points).
+        const url = `https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=${apiKey}`;
 
-        // Yahoo Finance APIへのリクエスト
-        // interval=1d (日足)
-        const url = `https://query1.finance.yahoo.com/v8/finance/chart/${yahooSymbol}?period1=${period1}&period2=${period2}&interval=1d`;
+        console.log(`[DEBUG] Fetching data for ${symbol} from Alpha Vantage`);
+        console.log(`[DEBUG] URL: https://www.alphavantage.co/query?function=TIME_SERIES_DAILY&symbol=${symbol}&apikey=HIDDEN`);
 
-        const response = await fetch(url, {
-            headers: {
-                'User-Agent': 'Mozilla/5.0 (Macintosh; Intel Mac OS X 10_15_7) AppleWebKit/537.36 (KHTML, like Gecko) Chrome/121.0.0.0 Safari/537.36'
-            }
-        });
+        const response = await fetch(url);
 
         if (!response.ok) {
             const errorText = await response.text();
-            console.error(`Yahoo Finance API Error: ${response.status} ${response.statusText}`, errorText);
+            console.error(`[DEBUG] Alpha Vantage API Error: ${response.status}`, errorText);
             return res.status(response.status).json({
-                error: `Yahoo Finance API error: ${response.statusText}`,
-                details: errorText,
-                url: url
+                error: `Alpha Vantage API error: ${response.statusText}`,
+                details: errorText
             });
         }
 
         const data = await response.json();
 
-        // データが存在しない場合のチェック
-        if (!data.chart || !data.chart.result || data.chart.result.length === 0) {
-            return res.status(404).json({ error: 'No data found for this symbol' });
+        // Log the keys of the response to see what we got
+        console.log(`[DEBUG] Response keys: ${Object.keys(data).join(', ')}`);
+
+        // エラーレスポンスハンドリング (Alpha Vantageは200 OKでもエラーメッセージをJSONで返すことがある)
+        if (data['Error Message']) {
+            console.error('[DEBUG] Alpha Vantage Error:', data['Error Message']);
+            return res.status(404).json({ error: 'Symbol not found or API error', details: data['Error Message'] });
+        }
+        if (data['Note']) {
+            // Rate Limit etc.
+            console.warn('[DEBUG] Alpha Vantage Note (Rate Limit?):', data['Note']);
+            // Limit reached is often 200 OK with a Note
+            return res.status(429).json({ error: 'API Rate limit exceeded', details: data['Note'] });
+        }
+        if (data['Information']) {
+            console.warn('[DEBUG] Alpha Vantage Information:', data['Information']);
+            return res.status(429).json({ error: 'API Information message (limit?)', details: data['Information'] });
         }
 
-        const result = data.chart.result[0];
-        const timestamps = result.timestamp;
-        const indicators = result.indicators.quote[0];
-
-        // データがない場合
-        if (!timestamps || !indicators) {
-            return res.status(404).json({ error: 'No chart data available' });
+        const timeSeries = data['Time Series (Daily)'];
+        if (!timeSeries) {
+            console.error('[DEBUG] "Time Series (Daily)" not found in response.');
+            return res.status(404).json({ error: 'No data found for this symbol', rawData: data });
         }
 
-        // クライアントが期待する形式に変換
-        const candles = timestamps.map((timestamp, index) => {
-            // null値のチェック（取引停止などでデータが欠損している場合）
-            if (indicators.open[index] === null) return null;
+        // データ変換
+        // Alpha Vantage format:
+        // "2023-10-27": {
+        //     "1. open": "166.9100",
+        //     "2. high": "168.9600",
+        //     "3. low": "166.8300",
+        //     "4. close": "168.2200",
+        //     "5. volume": "58499129"
+        // }
 
+        const candles = Object.entries(timeSeries).map(([date, values]) => {
+            const v = values; // Type: any
             return {
-                time: new Date(timestamp * 1000).toISOString().split('T')[0],
-                open: indicators.open[index],
-                high: indicators.high[index],
-                low: indicators.low[index],
-                close: indicators.close[index],
-                volume: indicators.volume[index]
+                time: date,
+                open: parseFloat(v['1. open']),
+                high: parseFloat(v['2. high']),
+                low: parseFloat(v['3. low']),
+                close: parseFloat(v['4. close']),
+                volume: parseInt(v['5. volume'], 10)
             };
-        }).filter(candle => candle !== null); // nullを除外
+        });
+
+        console.log(`[DEBUG] Successfully processed ${candles.length} candles for ${symbol}`);
+
+        // 日付昇順にソート (Alpha Vantageは通常降順で返すが、チャートライブラリは昇順を期待することが多い)
+        candles.sort((a, b) => new Date(a.time).getTime() - new Date(b.time).getTime());
 
         res.json({
             symbol: symbol,
@@ -92,7 +111,7 @@ router.get('/:symbol', async (req, res) => {
         });
 
     } catch (error) {
-        console.error('API Error:', error);
+        console.error('[DEBUG] API Error:', error);
         res.status(500).json({ error: error.message });
     }
 });

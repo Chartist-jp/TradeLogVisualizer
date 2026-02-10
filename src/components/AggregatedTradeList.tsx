@@ -7,6 +7,7 @@ const AggregatedTradeList: React.FC = () => {
     const [trades, setTrades] = useState<AggregatedTrade[]>([]);
     const [loading, setLoading] = useState(true);
     const [selectedTrade, setSelectedTrade] = useState<AggregatedTrade | null>(null);
+    const [sortConfig, setSortConfig] = useState<{ key: keyof AggregatedTrade; direction: 'asc' | 'desc' } | null>({ key: 'exitDate', direction: 'desc' });
 
     useEffect(() => {
         loadTrades();
@@ -15,8 +16,6 @@ const AggregatedTradeList: React.FC = () => {
     const loadTrades = async () => {
         try {
             const allTrades = await db.aggregatedTrades.toArray();
-            // 最新順にソート (exitDate降順)
-            allTrades.sort((a, b) => new Date(b.exitDate).getTime() - new Date(a.exitDate).getTime());
             setTrades(allTrades);
         } catch (error) {
             console.error('統合トレードの読み込みエラー:', error);
@@ -24,6 +23,35 @@ const AggregatedTradeList: React.FC = () => {
             setLoading(false);
         }
     };
+
+    const handleSort = (key: keyof AggregatedTrade) => {
+        let direction: 'asc' | 'desc' = 'asc';
+        if (sortConfig && sortConfig.key === key && sortConfig.direction === 'asc') {
+            direction = 'desc';
+        }
+        setSortConfig({ key, direction });
+    };
+
+    const sortedTrades = React.useMemo(() => {
+        let sortableTrades = [...trades];
+        if (sortConfig !== null) {
+            sortableTrades.sort((a, b) => {
+                const aValue = a[sortConfig.key];
+                const bValue = b[sortConfig.key];
+
+                if (aValue === undefined || bValue === undefined) return 0;
+
+                if (aValue < bValue) {
+                    return sortConfig.direction === 'asc' ? -1 : 1;
+                }
+                if (aValue > bValue) {
+                    return sortConfig.direction === 'asc' ? 1 : -1;
+                }
+                return 0;
+            });
+        }
+        return sortableTrades;
+    }, [trades, sortConfig]);
 
     const formatCurrency = (value: number, country: 'JP' | 'US') => {
         if (country === 'JP') {
@@ -105,20 +133,20 @@ const AggregatedTradeList: React.FC = () => {
             <table className="trade-table">
                 <thead>
                     <tr>
-                        <th>銘柄</th>
-                        <th>エントリー日</th>
-                        <th>エグジット日</th>
-                        <th>保有日数</th>
-                        <th>数量</th>
-                        <th>平均取得単価</th>
-                        <th>平均売却単価</th>
-                        <th>損益額</th>
-                        <th>利益率</th>
+                        <th onClick={() => handleSort('symbol')} className="sortable">銘柄 {sortConfig?.key === 'symbol' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('entryDate')} className="sortable">エントリー日 {sortConfig?.key === 'entryDate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('exitDate')} className="sortable">エグジット日 {sortConfig?.key === 'exitDate' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('holdingDays')} className="sortable">保有日数 {sortConfig?.key === 'holdingDays' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('totalQuantity')} className="sortable">数量 {sortConfig?.key === 'totalQuantity' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('avgEntryPrice')} className="sortable">平均取得単価 {sortConfig?.key === 'avgEntryPrice' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('avgExitPrice')} className="sortable">平均売却単価 {sortConfig?.key === 'avgExitPrice' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('profitLoss')} className="sortable">損益額 {sortConfig?.key === 'profitLoss' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
+                        <th onClick={() => handleSort('profitLossPercent')} className="sortable">利益率 {sortConfig?.key === 'profitLossPercent' && (sortConfig.direction === 'asc' ? '▲' : '▼')}</th>
                         <th>アクション</th>
                     </tr>
                 </thead>
                 <tbody>
-                    {trades.map((trade, index) => (
+                    {sortedTrades.map((trade, index) => (
                         <tr
                             key={trade.id || index}
                             className={`${trade.profitLoss >= 0 ? 'profit-row' : 'loss-row'} ${selectedTrade?.id === trade.id ? 'selected-row' : ''}`}
