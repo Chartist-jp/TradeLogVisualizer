@@ -1,1 +1,3 @@
-backend/src/.env
+backend/src/routes/.env
+input/*
+
