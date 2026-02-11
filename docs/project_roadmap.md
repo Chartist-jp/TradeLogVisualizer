@@ -10,7 +10,7 @@
 * **法規制**: 「投資助言業」に抵触しないよう、「分析ツール」としての立ち位置を徹底する。
 
 ### フェーズ2: 技術設計・データ調達（インフラ）
-* **データ**: 米国株/仮想通貨（Polygon.io, Alpaca）、日本株（J-Quants）。
+* **データ**: 米国株/仮想通貨（Polygon.io, Alpaca）、日本株（J-Quants）。Alpha Vantage: https://www.alphavantage.co/
 * **テックスタック**: Frontend(React/Next.js), Backend(Node.js/Go), DB(PostgreSQL+TimescaleDB)。
 
 ### フェーズ3: 開発 (MVP構築)
