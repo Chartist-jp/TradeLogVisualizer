@@ -9,18 +9,27 @@
     "preview": "vite preview"
   },
   "dependencies": {
+    "bootstrap": "^5.3.8",
+    "buffer": "^6.0.3",
     "dexie": "^4.3.0",
     "encoding-japanese": "^2.2.0",
+    "firebase": "^12.9.0",
     "lightweight-charts": "^4.2.0",
+    "plotly.js": "^3.3.1",
+    "process": "^0.11.10",
     "react": "^18.2.0",
     "react-dom": "^18.2.0",
+    "react-plotly.js": "^2.6.0",
+    "react-router-dom": "^7.13.0",
     "recharts": "^3.7.0"
   },
   "devDependencies": {
+    "@types/bootstrap": "^5.2.10",
     "@types/react": "^18.2.64",
     "@types/react-dom": "^18.2.21",
+    "@types/react-plotly.js": "^2.6.4",
     "@vitejs/plugin-react": "^4.2.1",
     "typescript": "^5.2.2",
-    "vite": "^5.1.6"
+    "vite": "^5.4.21"
   }
 }
